@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {seed, employees, audience, visibleTo, acknowledge, acknowledgedCount, managers, stores, createAnnouncement, visibleToManager, isArchived, archiveAnnouncement, loadAnnouncements, STORAGE_KEY, addComment, newCommentCount, markCommentsRead, acknowledgeAsManager} from './model.ts';
+import {seed, employees, audience, visibleTo, acknowledge, acknowledgedCount, managers, stores, createAnnouncement, visibleToManager, isArchived, archiveAnnouncement, loadAnnouncements, STORAGE_KEY, addComment, newCommentCount, markCommentsRead, acknowledgeAsManager, needsAcknowledgment} from './model.ts';
 test('mock workforce has 200 people across five stores',()=>{assert.equal(employees.length,200);assert.equal(new Set(employees.map(e=>e.store)).size,5);});
 test('all-store and selected-store audiences are consistent',()=>{const rows=seed();assert.equal(audience(rows[0]).length,200);const selected=rows[2];assert.equal(audience(selected).length,80);assert.equal(visibleTo(selected,employees[0]),true);assert.equal(visibleTo(selected,employees[80]),false);});
 test('acknowledgment records once and updates manager totals',()=>{const a=seed()[0];const before=acknowledgedCount(a);const next=acknowledge(a,employees[0]);assert.ok(next.acknowledgments[employees[0].id]);assert.equal(acknowledgedCount(next),before+1);assert.equal(acknowledge(next,employees[0]),next);assert.equal(acknowledgedCount(a),before);});
@@ -277,4 +277,26 @@ test('existing store-authored posts receive an author acknowledgment on reload w
  assert.equal(loaded.data[0].acknowledgments[employees[0].id],a.acknowledgments[employees[0].id]);
  assert.deepEqual(loaded.data[0].comments,a.comments);
  assert.deepEqual(loaded.data[0].stores,[author.store]);
+});
+
+test('only incomplete required posts need acknowledgment, even when rounded rate is 100%', () => {
+ const a=createAnnouncement('michael',draft);
+ for(const person of employees.slice(0,-1)) a.acknowledgments[person.id]=a.createdAt;
+ assert.equal(Math.round(acknowledgedCount(a)/audience(a).length*100),100);
+ assert.equal(needsAcknowledgment(a),true);
+ const completed=acknowledge(a,employees.at(-1)!);
+ assert.equal(needsAcknowledgment(completed),false);
+ assert.equal(acknowledgedCount(completed),200);
+ assert.equal(needsAcknowledgment(createAnnouncement('michael',{...draft,important:false})),false);
+});
+test('completion follows the selected manager’s store without hiding incomplete stores', () => {
+ const a=createAnnouncement('michael',draft);
+ const downtown=managers.find(m=>m.store==='Downtown')!;
+ const westside=managers.find(m=>m.store==='Westside')!;
+ for(const person of employees.filter(e=>e.store==='Downtown')) a.acknowledgments[person.id]=a.createdAt;
+ assert.equal(needsAcknowledgment(a,downtown),false);
+ assert.equal(needsAcknowledgment(a,westside),true);
+ assert.equal(needsAcknowledgment(a,managers[0]),true);
+ const targeted=createAnnouncement('michael',{...draft,stores:['Westside']});
+ assert.equal(needsAcknowledgment(targeted,downtown),false);
 });

@@ -33,6 +33,9 @@ export function sortManagerUpdates(updates: Announcement[]): Announcement[] {
  return [...updates].sort((a, b) => Number(b.important) - Number(a.important) || Date.parse(b.createdAt) - Date.parse(a.createdAt));
 }
 export function acknowledgedCount(a: Announcement, manager?: Manager): number { return audience(a, manager).filter(e => !!a.acknowledgments[e.id]).length; }
+export function needsAcknowledgment(a: Announcement, manager?: Manager): boolean {
+ return a.important && audience(a, manager).some(e => !a.acknowledgments[e.id]);
+}
 export function acknowledge(a: Announcement, employee: Employee): Announcement { if (!a.important || !visibleTo(a, employee) || a.acknowledgments[employee.id]) return a; return { ...a, acknowledgments: { ...a.acknowledgments, [employee.id]: new Date().toISOString() } }; }
 export function acknowledgeAsManager(a: Announcement, managerId: string): Announcement {
  const manager = managers.find(m => m.id === managerId);
