@@ -1,6 +1,6 @@
 # Summit — Team updates
 
-A local, browser-based prototype for Scenario 2: Important Employee Updates. Built with React, TypeScript, and Vite.
+A local, browser-based prototype for Important Employee Updates. Built with React, TypeScript, and Vite.
 
 ## Run locally
 
