@@ -18,6 +18,8 @@ npm test       # Audience and acknowledgment behavior
 npm run build # Type checking and production build
 npm run preview # Serve the production build
 ```
+## Demo
+[![](https://markdown-videos-api.jorgenkh.no/youtube/3eXyVtZXm2E)](https://youtu.be/3eXyVtZXm2E)
 
 ## Demo walkthrough
 
